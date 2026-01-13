@@ -1,6 +1,6 @@
 {
   "name": "ralph-gate",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Structured verification gates for Claude Code - prevent premature completion with ordered validation checks",
   "keywords": [
