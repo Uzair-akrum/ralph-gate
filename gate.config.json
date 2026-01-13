@@ -1,0 +1,18 @@
+{
+  "gates": [
+    {
+      "name": "build",
+      "command": "npm run build",
+      "order": 10,
+      "blocking": true,
+      "enabled": true
+    },
+    {
+      "name": "test",
+      "command": "npm test",
+      "order": 20,
+      "blocking": true,
+      "enabled": true
+    }
+  ]
+}
