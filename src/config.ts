@@ -20,9 +20,10 @@ function normalizeGate(gate: Gate): Gate {
     order,
     enabled,
     blocking,
-    description: typeof gate.description === 'string' ? gate.description : undefined,
+    description:
+      typeof gate.description === 'string' ? gate.description : undefined,
     name: gate.name,
-    command: gate.command
+    command: gate.command,
   } as Gate;
 }
 
@@ -34,7 +35,10 @@ function validateGate(gate: unknown): string | null {
   if (typeof maybeGate.name !== 'string' || maybeGate.name.trim() === '') {
     return 'Gate is missing required field: name.';
   }
-  if (typeof maybeGate.command !== 'string' || maybeGate.command.trim() === '') {
+  if (
+    typeof maybeGate.command !== 'string' ||
+    maybeGate.command.trim() === ''
+  ) {
     return `Gate '${maybeGate.name}' is missing required field: command.`;
   }
   return null;
@@ -53,7 +57,9 @@ function sortGates(gates: Gate[]): Gate[] {
   return withIndex.map((entry) => entry.gate);
 }
 
-export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfigResult> {
+export async function loadConfig(
+  cwd: string = process.cwd(),
+): Promise<LoadConfigResult> {
   for (const filename of CONFIG_FILES) {
     const filePath = path.join(cwd, filename);
     try {
@@ -69,7 +75,7 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
       return {
         config: null,
         configPath: filePath,
-        error: `Invalid config: unable to read ${filename}: ${(error as Error).message}`
+        error: `Invalid config: unable to read ${filename}: ${(error as Error).message}`,
       };
     }
 
@@ -80,7 +86,7 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
       return {
         config: null,
         configPath: filePath,
-        error: `Invalid config: malformed JSON in ${filename}: ${(error as Error).message}`
+        error: `Invalid config: malformed JSON in ${filename}: ${(error as Error).message}`,
       };
     }
 
@@ -88,7 +94,7 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
       return {
         config: null,
         configPath: filePath,
-        error: `Invalid config: expected object in ${filename}.`
+        error: `Invalid config: expected object in ${filename}.`,
       };
     }
 
@@ -97,7 +103,7 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
       return {
         config: null,
         configPath: filePath,
-        error: `Invalid config: missing required 'gates' array in ${filename}.`
+        error: `Invalid config: missing required 'gates' array in ${filename}.`,
       };
     }
 
@@ -108,7 +114,7 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
         return {
           config: null,
           configPath: filePath,
-          error: `Invalid config: ${gateError}`
+          error: `Invalid config: ${gateError}`,
         };
       }
       const normalizedGate = normalizeGate(gate as Gate);
@@ -118,8 +124,10 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
       normalized.push(normalizedGate);
     }
 
-    const failFast = typeof config.failFast === 'boolean' ? config.failFast : true;
-    const outputPath = typeof config.outputPath === 'string' ? config.outputPath : undefined;
+    const failFast =
+      typeof config.failFast === 'boolean' ? config.failFast : true;
+    const outputPath =
+      typeof config.outputPath === 'string' ? config.outputPath : undefined;
 
     const sorted = sortGates(normalized);
 
@@ -127,9 +135,9 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<LoadConfi
       config: {
         gates: sorted,
         failFast,
-        outputPath
+        outputPath,
       },
-      configPath: filePath
+      configPath: filePath,
     };
   }
 

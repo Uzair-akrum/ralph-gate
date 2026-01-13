@@ -6,6 +6,9 @@ export interface RunGatesOptions {
   verbose?: boolean;
   shell?: string;
   cwd?: string;
+  onGateStart?: (gate: Gate) => void;
+  onGateOutput?: (gate: Gate, stream: 'stdout' | 'stderr', text: string) => void;
+  onGateComplete?: (result: GateResult) => void;
 }
 
 function resolveShell(shell?: string): string | boolean {
@@ -16,16 +19,20 @@ function resolveShell(shell?: string): string | boolean {
   return envShell && envShell.length > 0 ? envShell : true;
 }
 
-async function runGate(gate: Gate, options: RunGatesOptions): Promise<GateResult> {
+async function runGate(
+  gate: Gate,
+  options: RunGatesOptions,
+): Promise<GateResult> {
   const start = Date.now();
   const shell = resolveShell(options.shell);
   const env = process.env;
 
   return new Promise((resolve) => {
+    options.onGateStart?.(gate);
     const child = spawn(gate.command, {
       shell,
       env,
-      cwd: options.cwd
+      cwd: options.cwd,
     });
 
     let stdout = '';
@@ -39,7 +46,7 @@ async function runGate(gate: Gate, options: RunGatesOptions): Promise<GateResult
       }
       resolved = true;
       const durationMs = Date.now() - start;
-      resolve({
+      const result: GateResult = {
         name: gate.name,
         passed: exitCode === 0,
         exitCode,
@@ -47,8 +54,11 @@ async function runGate(gate: Gate, options: RunGatesOptions): Promise<GateResult
         stderr,
         durationMs,
         skipped: false,
-        blocking: gate.blocking !== false
-      });
+        blocking: gate.blocking !== false,
+        timestamp: new Date().toISOString(),
+      };
+      options.onGateComplete?.(result);
+      resolve(result);
     };
 
     child.stdout?.on('data', (chunk) => {
@@ -57,6 +67,7 @@ async function runGate(gate: Gate, options: RunGatesOptions): Promise<GateResult
       if (options.verbose) {
         process.stdout.write(text);
       }
+      options.onGateOutput?.(gate, 'stdout', text);
     });
 
     child.stderr?.on('data', (chunk) => {
@@ -65,6 +76,7 @@ async function runGate(gate: Gate, options: RunGatesOptions): Promise<GateResult
       if (options.verbose) {
         process.stderr.write(text);
       }
+      options.onGateOutput?.(gate, 'stderr', text);
     });
 
     child.on('error', (error) => {
@@ -82,7 +94,7 @@ async function runGate(gate: Gate, options: RunGatesOptions): Promise<GateResult
 
 export async function runGates(
   gates: Gate[],
-  options: RunGatesOptions = {}
+  options: RunGatesOptions = {},
 ): Promise<GateRunSummary> {
   const results: GateResult[] = [];
   const warnings: string[] = [];
@@ -92,12 +104,10 @@ export async function runGates(
   for (const gate of gates) {
     const isBlocking = gate.blocking !== false;
     const shouldSkip =
-      options.failFast !== false &&
-      firstFailure !== null &&
-      isBlocking;
+      options.failFast !== false && firstFailure !== null && isBlocking;
 
     if (shouldSkip) {
-      results.push({
+      const skippedResult: GateResult = {
         name: gate.name,
         passed: true,
         exitCode: null,
@@ -105,8 +115,11 @@ export async function runGates(
         stderr: '',
         durationMs: 0,
         skipped: true,
-        blocking: isBlocking
-      });
+        blocking: isBlocking,
+        timestamp: new Date().toISOString(),
+      };
+      results.push(skippedResult);
+      options.onGateComplete?.(skippedResult);
       continue;
     }
 
@@ -133,6 +146,6 @@ export async function runGates(
     totalDurationMs,
     results,
     firstFailure,
-    warnings
+    warnings,
   };
 }

@@ -16,6 +16,7 @@ export interface GateResult {
   durationMs: number;
   skipped: boolean;
   blocking: boolean;
+  timestamp: string;
 }
 
 export interface GateRunSummary {

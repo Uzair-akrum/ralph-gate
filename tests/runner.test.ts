@@ -13,7 +13,7 @@ describe('runGates', () => {
     const gates: Gate[] = [
       { name: 'pass', command: cmd('process.exit(0)') },
       { name: 'fail', command: cmd('process.exit(1)') },
-      { name: 'skipped', command: cmd('process.exit(0)') }
+      { name: 'skipped', command: cmd('process.exit(0)') },
     ];
 
     const summary = await runGates(gates, { failFast: true });
@@ -27,7 +27,7 @@ describe('runGates', () => {
   it('continues running non-blocking gates after failure', async () => {
     const gates: Gate[] = [
       { name: 'fail', command: cmd('process.exit(1)') },
-      { name: 'warn', command: cmd('process.exit(2)'), blocking: false }
+      { name: 'warn', command: cmd('process.exit(2)'), blocking: false },
     ];
 
     const summary = await runGates(gates, { failFast: true });
@@ -39,7 +39,10 @@ describe('runGates', () => {
 
   it('captures stderr for failures', async () => {
     const gates: Gate[] = [
-      { name: 'fail', command: cmd("console.error('boom'); process.exit(1)") }
+      {
+        name: 'fail',
+        command: cmd("require('fs').writeSync(2, 'boom\\n'); process.exit(1)"),
+      },
     ];
 
     const summary = await runGates(gates, { failFast: true });

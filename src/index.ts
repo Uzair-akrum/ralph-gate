@@ -7,5 +7,5 @@ export type {
   GateResult,
   GateRunSummary,
   GateConfig,
-  HookOutput
+  HookOutput,
 } from './types.js';
