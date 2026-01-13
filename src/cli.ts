@@ -17,6 +17,7 @@ interface CliOptions {
 interface InitCliOptions {
   force: boolean;
   print: boolean;
+  skipHook: boolean;
 }
 
 function parseArgs(args: string[]): { options: CliOptions; error?: string } {
@@ -62,6 +63,7 @@ function parseInitArgs(args: string[]): {
   const options: InitCliOptions = {
     force: false,
     print: false,
+    skipHook: false,
   };
 
   for (let i = 0; i < args.length; i += 1) {
@@ -72,6 +74,9 @@ function parseInitArgs(args: string[]): {
         break;
       case '--print':
         options.print = true;
+        break;
+      case '--skip-hook':
+        options.skipHook = true;
         break;
       default:
         return { options, error: `Unknown argument: ${arg}` };
@@ -155,6 +160,7 @@ async function main(): Promise<void> {
     const result = await initConfigFile({
       force: options.force,
       print: options.print,
+      skipHook: options.skipHook,
     });
     if (result.error) {
       console.error(result.error);
@@ -176,6 +182,13 @@ async function main(): Promise<void> {
     );
     if (result.gitignoreUpdated) {
       console.log('Updated .gitignore to exclude gate-results-*.json files.');
+    }
+    if (result.hookConfigured) {
+      console.log(
+        'Added Stop hook to .claude/settings.local.json for automatic gate runs.',
+      );
+    } else if (result.hookAlreadyExists) {
+      console.log('Stop hook already exists in .claude/settings.local.json.');
     }
     return;
   }

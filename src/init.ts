@@ -9,10 +9,10 @@ type PackageManager = 'npm' | 'yarn' | 'pnpm';
 
 type DetectedProject =
   | {
-      kind: 'node';
-      packageManager: PackageManager;
-      packageJson: Record<string, unknown>;
-    }
+    kind: 'node';
+    packageManager: PackageManager;
+    packageJson: Record<string, unknown>;
+  }
   | { kind: 'python'; requirements: Set<string> }
   | { kind: 'unknown' };
 
@@ -21,6 +21,7 @@ export interface InitOptions {
   filename?: string;
   force?: boolean;
   print?: boolean;
+  skipHook?: boolean;
 }
 
 export interface InitResult {
@@ -31,6 +32,8 @@ export interface InitResult {
   warnings: string[];
   error?: string;
   gitignoreUpdated?: boolean;
+  hookConfigured?: boolean;
+  hookAlreadyExists?: boolean;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -262,6 +265,85 @@ async function updateGitignore(cwd: string): Promise<boolean> {
   }
 }
 
+interface ClaudeHook {
+  type: string;
+  command: string;
+}
+
+interface ClaudeSettings {
+  hooks?: {
+    Stop?: ClaudeHook[];
+    [key: string]: ClaudeHook[] | undefined;
+  };
+  [key: string]: unknown;
+}
+
+const RALPH_GATE_HOOK_COMMAND = 'npx ralph-gate --hook';
+
+async function setupClaudeHook(
+  cwd: string,
+): Promise<{ configured: boolean; alreadyExists: boolean }> {
+  const claudeDir = path.join(cwd, '.claude');
+  const settingsPath = path.join(claudeDir, 'settings.local.json');
+
+  try {
+    // Ensure .claude directory exists
+    await fs.mkdir(claudeDir, { recursive: true });
+
+    let settings: ClaudeSettings = {};
+
+    // Read existing settings if file exists
+    if (await fileExists(settingsPath)) {
+      try {
+        const content = await fs.readFile(settingsPath, 'utf8');
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === 'object') {
+          settings = parsed as ClaudeSettings;
+        }
+      } catch {
+        // If we can't parse existing file, start fresh but warn
+        settings = {};
+      }
+    }
+
+    // Initialize hooks structure if needed
+    if (!settings.hooks) {
+      settings.hooks = {};
+    }
+    if (!settings.hooks.Stop) {
+      settings.hooks.Stop = [];
+    }
+
+    // Check if ralph-gate hook already exists
+    const hookExists = settings.hooks.Stop.some(
+      (hook) =>
+        hook.type === 'command' && hook.command === RALPH_GATE_HOOK_COMMAND,
+    );
+
+    if (hookExists) {
+      return { configured: false, alreadyExists: true };
+    }
+
+    // Add the ralph-gate hook
+    settings.hooks.Stop.push({
+      type: 'command',
+      command: RALPH_GATE_HOOK_COMMAND,
+    });
+
+    // Write updated settings
+    await fs.writeFile(
+      settingsPath,
+      JSON.stringify(settings, null, 2) + '\n',
+      'utf8',
+    );
+
+    return { configured: true, alreadyExists: false };
+  } catch {
+    // Silently fail if we can't setup hook
+    return { configured: false, alreadyExists: false };
+  }
+}
+
 export async function generateGateConfig(cwd: string): Promise<{
   config: GateConfig;
   projectKind: DetectedProject['kind'];
@@ -349,6 +431,16 @@ export async function initConfigFile(
   // Update .gitignore to include gate result files
   const gitignoreUpdated = await updateGitignore(cwd);
 
+  // Setup Claude hook unless skipped
+  let hookConfigured: boolean | undefined;
+  let hookAlreadyExists: boolean | undefined;
+
+  if (!options.skipHook) {
+    const hookResult = await setupClaudeHook(cwd);
+    hookConfigured = hookResult.configured;
+    hookAlreadyExists = hookResult.alreadyExists;
+  }
+
   return {
     config,
     configPath,
@@ -356,5 +448,7 @@ export async function initConfigFile(
     projectKind,
     warnings,
     gitignoreUpdated,
+    hookConfigured,
+    hookAlreadyExists,
   };
 }

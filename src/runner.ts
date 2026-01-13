@@ -7,7 +7,11 @@ export interface RunGatesOptions {
   shell?: string;
   cwd?: string;
   onGateStart?: (gate: Gate) => void;
-  onGateOutput?: (gate: Gate, stream: 'stdout' | 'stderr', text: string) => void;
+  onGateOutput?: (
+    gate: Gate,
+    stream: 'stdout' | 'stderr',
+    text: string,
+  ) => void;
   onGateComplete?: (result: GateResult) => void;
 }
 

@@ -21,7 +21,10 @@ function truncateOutput(text: string, maxChars: number): string {
   return `${head}${marker}${tail}`;
 }
 
-function splitBudget(stdoutLen: number, stderrLen: number): {
+function splitBudget(
+  stdoutLen: number,
+  stderrLen: number,
+): {
   stdout: number;
   stderr: number;
 } {
