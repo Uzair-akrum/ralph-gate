@@ -9,10 +9,10 @@ type PackageManager = 'npm' | 'yarn' | 'pnpm';
 
 type DetectedProject =
   | {
-    kind: 'node';
-    packageManager: PackageManager;
-    packageJson: Record<string, unknown>;
-  }
+      kind: 'node';
+      packageManager: PackageManager;
+      packageJson: Record<string, unknown>;
+    }
   | { kind: 'python'; requirements: Set<string> }
   | { kind: 'unknown' };
 
@@ -265,15 +265,20 @@ async function updateGitignore(cwd: string): Promise<boolean> {
   }
 }
 
-interface ClaudeHook {
+interface ClaudeHookCommand {
   type: string;
   command: string;
 }
 
+interface ClaudeHookConfig {
+  matcher?: Record<string, unknown>;
+  hooks: ClaudeHookCommand[];
+}
+
 interface ClaudeSettings {
   hooks?: {
-    Stop?: ClaudeHook[];
-    [key: string]: ClaudeHook[] | undefined;
+    Stop?: ClaudeHookConfig[];
+    [key: string]: ClaudeHookConfig[] | undefined;
   };
   [key: string]: unknown;
 }
@@ -315,19 +320,26 @@ async function setupClaudeHook(
     }
 
     // Check if ralph-gate hook already exists
-    const hookExists = settings.hooks.Stop.some(
-      (hook) =>
-        hook.type === 'command' && hook.command === RALPH_GATE_HOOK_COMMAND,
+    const hookExists = settings.hooks.Stop.some((config) =>
+      config.hooks?.some(
+        (hook) =>
+          hook.type === 'command' && hook.command === RALPH_GATE_HOOK_COMMAND,
+      ),
     );
 
     if (hookExists) {
       return { configured: false, alreadyExists: true };
     }
 
-    // Add the ralph-gate hook
+    // Add the ralph-gate hook with matcher
     settings.hooks.Stop.push({
-      type: 'command',
-      command: RALPH_GATE_HOOK_COMMAND,
+      matcher: {},
+      hooks: [
+        {
+          type: 'command',
+          command: RALPH_GATE_HOOK_COMMAND,
+        },
+      ],
     });
 
     // Write updated settings
