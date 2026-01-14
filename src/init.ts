@@ -9,10 +9,10 @@ type PackageManager = 'npm' | 'yarn' | 'pnpm';
 
 type DetectedProject =
   | {
-    kind: 'node';
-    packageManager: PackageManager;
-    packageJson: Record<string, unknown>;
-  }
+      kind: 'node';
+      packageManager: PackageManager;
+      packageJson: Record<string, unknown>;
+    }
   | { kind: 'python'; requirements: Set<string> }
   | { kind: 'unknown' };
 
