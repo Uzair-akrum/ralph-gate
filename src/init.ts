@@ -9,10 +9,10 @@ type PackageManager = 'npm' | 'yarn' | 'pnpm';
 
 type DetectedProject =
   | {
-      kind: 'node';
-      packageManager: PackageManager;
-      packageJson: Record<string, unknown>;
-    }
+    kind: 'node';
+    packageManager: PackageManager;
+    packageJson: Record<string, unknown>;
+  }
   | { kind: 'python'; requirements: Set<string> }
   | { kind: 'unknown' };
 
@@ -319,14 +319,15 @@ async function setupClaudeHook(
       settings.hooks.Stop = [];
     }
 
-    // Filter out invalid/legacy hook configurations (e.g. missing 'hooks' array)
-    settings.hooks.Stop = settings.hooks.Stop.filter(
-      (item) =>
-        item &&
-        typeof item === 'object' &&
-        'hooks' in item &&
-        Array.isArray(item.hooks),
-    );
+    // Filter out invalid/legacy hook configurations
+    // 1. Must have 'hooks' array
+    // 2. Must NOT have a matcher that is an object (Stop hooks expect string or undefined)
+    settings.hooks.Stop = settings.hooks.Stop.filter((item) => {
+      if (!item || typeof item !== 'object') return false;
+      if (!('hooks' in item) || !Array.isArray(item.hooks)) return false;
+      if ('matcher' in item && typeof item.matcher === 'object') return false; // Remove legacy object matchers
+      return true;
+    });
 
     // Check if ralph-gate hook already exists in new format
     let hookExists = false;
@@ -347,9 +348,8 @@ async function setupClaudeHook(
       return { configured: false, alreadyExists: true };
     }
 
-    // Append the ralph-gate hook with new format
+    // Append the ralph-gate hook with new format (no matcher for Stop hooks)
     settings.hooks.Stop.push({
-      matcher: '*',
       hooks: [
         {
           type: 'command',

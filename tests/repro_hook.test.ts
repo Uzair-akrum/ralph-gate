@@ -55,12 +55,11 @@ describe('ralph-gate init hook fix', () => {
       const stopHooks = newSettings.hooks.Stop;
       expect(Array.isArray(stopHooks)).toBe(true);
 
-      // The legacy hook should be gone because it didn't have 'hooks' array
-      // The only hook should be the new ralph-gate one
+      // The legacy hooks (both no-hooks-array, and object-matcher) should be gone
       expect(stopHooks.length).toBe(1);
 
       const hook = stopHooks[0];
-      expect(hook.matcher).toBe('*'); // Check for string matcher
+      expect(hook.matcher).toBeUndefined(); // Should be undefined, not "*" or object
       expect(hook.hooks[0].command).toContain('ralph-gate');
     });
   });
