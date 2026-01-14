@@ -1,5 +1,11 @@
 # ralph-gate
 
+## 0.3.2
+
+### Patch Changes
+
+- 5e21336: hook setting fixed
+
 ## 0.3.1
 
 ### Patch Changes
