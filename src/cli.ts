@@ -87,7 +87,7 @@ function parseInitArgs(args: string[]): {
 }
 
 function defaultOutputPath(): string {
-  return `gate-results-${process.pid}.json`;
+  return path.join('gate-results', `gate-results-${process.pid}.json`);
 }
 
 function createEmptySummary(passed: boolean): GateRunSummary {
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
       `Created ${path.basename(result.configPath)} with ${result.config.gates.length} gate(s).`,
     );
     if (result.gitignoreUpdated) {
-      console.log('Updated .gitignore to exclude gate-results-*.json files.');
+      console.log('Updated .gitignore to exclude gate-results/ folder.');
     }
     if (result.hookConfigured) {
       console.log(

@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import type { GateResult, GateRunSummary } from './types.js';
 
 const MAX_FAILURE_CHARS = 4000;
@@ -141,5 +142,11 @@ export async function writeResultsFile(
   outputPath: string,
 ): Promise<void> {
   const data = JSON.stringify(summary, null, 2);
+  const dir = path.dirname(outputPath);
+  try {
+    await fs.mkdir(dir, { recursive: true });
+  } catch {
+    // Ignore error if directory already exists or can't be created
+  }
   await fs.writeFile(outputPath, data, 'utf8');
 }

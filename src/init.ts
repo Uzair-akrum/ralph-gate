@@ -9,10 +9,10 @@ type PackageManager = 'npm' | 'yarn' | 'pnpm';
 
 type DetectedProject =
   | {
-      kind: 'node';
-      packageManager: PackageManager;
-      packageJson: Record<string, unknown>;
-    }
+    kind: 'node';
+    packageManager: PackageManager;
+    packageJson: Record<string, unknown>;
+  }
   | { kind: 'python'; requirements: Set<string> }
   | { kind: 'unknown' };
 
@@ -235,12 +235,12 @@ function inferPythonGates(
 
 async function updateGitignore(cwd: string): Promise<boolean> {
   const gitignorePath = path.join(cwd, '.gitignore');
-  const pattern = 'gate-results-*.json';
+  const dirPattern = 'gate-results/';
 
   try {
     // Use git check-ignore to test if the pattern would already cover gate result files
     // This handles all edge cases: broader patterns, multiple patterns, etc.
-    execSync('git check-ignore -q gate-results-test.json', {
+    execSync('git check-ignore -q gate-results/any.json', {
       cwd,
       stdio: 'ignore',
     });
@@ -257,7 +257,7 @@ async function updateGitignore(cwd: string): Promise<boolean> {
 
     // Append the pattern with proper newline handling
     const newline = content && !content.endsWith('\n') ? '\n' : '';
-    await fs.appendFile(gitignorePath, `${newline}${pattern}\n`, 'utf8');
+    await fs.appendFile(gitignorePath, `${newline}${dirPattern}\n`, 'utf8');
     return true;
   } catch {
     // Silently fail if we can't update .gitignore
@@ -271,7 +271,7 @@ interface ClaudeHookCommand {
 }
 
 interface ClaudeHookConfig {
-  matcher?: Record<string, unknown>;
+  matcher?: Record<string, unknown> | string;
   hooks: ClaudeHookCommand[];
 }
 
@@ -319,21 +319,38 @@ async function setupClaudeHook(
       settings.hooks.Stop = [];
     }
 
-    // Check if ralph-gate hook already exists
-    const hookExists = settings.hooks.Stop.some((config) =>
-      config.hooks?.some(
-        (hook) =>
-          hook.type === 'command' && hook.command === RALPH_GATE_HOOK_COMMAND,
-      ),
+    // Filter out invalid/legacy hook configurations (e.g. missing 'hooks' array)
+    settings.hooks.Stop = settings.hooks.Stop.filter(
+      (item) =>
+        item &&
+        typeof item === 'object' &&
+        'hooks' in item &&
+        Array.isArray(item.hooks),
     );
+
+    // Check if ralph-gate hook already exists in new format
+    let hookExists = false;
+    for (const item of settings.hooks.Stop) {
+      if ('hooks' in item && Array.isArray(item.hooks)) {
+        const hasRalphGate = item.hooks.some(
+          (hook) =>
+            hook.type === 'command' &&
+            hook.command === RALPH_GATE_HOOK_COMMAND,
+        );
+        if (hasRalphGate) {
+          hookExists = true;
+          break;
+        }
+      }
+    }
 
     if (hookExists) {
       return { configured: false, alreadyExists: true };
     }
 
-    // Add the ralph-gate hook with matcher
+    // Append the ralph-gate hook with new format
     settings.hooks.Stop.push({
-      matcher: {},
+      matcher: '*',
       hooks: [
         {
           type: 'command',
