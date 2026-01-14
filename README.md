@@ -30,6 +30,7 @@ npx ralph-gate init
 ```
 
 This command automatically:
+
 - Generates a `gate.config.json` based on your project scripts
 - Configures the Claude Code verification hook
 - Updates `.gitignore`
