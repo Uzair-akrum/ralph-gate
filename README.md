@@ -23,35 +23,18 @@ npm install -D ralph-gate
 
 ## Quick Start
 
-1. Create a `gate.config.json` in your project root:
+1. Initialize Ralph Gate in your project:
 
-```json
-{
-  "gates": [
-    { "name": "lint", "command": "npm run lint", "order": 10 },
-    { "name": "typecheck", "command": "npm run typecheck", "order": 20 },
-    { "name": "test", "command": "npm test", "order": 30 },
-    { "name": "build", "command": "npm run build", "order": 40 }
-  ]
-}
+```bash
+npx ralph-gate init
 ```
 
-2. Add to your `.claude/settings.local.json`:
+This command automatically:
+- Generates a `gate.config.json` based on your project scripts
+- Configures the Claude Code verification hook
+- Updates `.gitignore`
 
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "type": "command",
-        "command": "npx ralph-gate --hook"
-      }
-    ]
-  }
-}
-```
-
-3. Now when Claude Code tries to stop, your gates will run first!
+2. Now when Claude Code tries to stop, your gates will run first!
 
 ## Configuration
 
@@ -109,6 +92,9 @@ npm install -D ralph-gate
 ## CLI Reference
 
 ```bash
+# Initialize project configuration
+npx ralph-gate init
+
 # Run all gates with console output
 npx ralph-gate
 
