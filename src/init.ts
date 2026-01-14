@@ -9,10 +9,10 @@ type PackageManager = 'npm' | 'yarn' | 'pnpm';
 
 type DetectedProject =
   | {
-    kind: 'node';
-    packageManager: PackageManager;
-    packageJson: Record<string, unknown>;
-  }
+      kind: 'node';
+      packageManager: PackageManager;
+      packageJson: Record<string, unknown>;
+    }
   | { kind: 'python'; requirements: Set<string> }
   | { kind: 'unknown' };
 
@@ -235,12 +235,12 @@ function inferPythonGates(
 
 async function updateGitignore(cwd: string): Promise<boolean> {
   const gitignorePath = path.join(cwd, '.gitignore');
-  const dirPattern = 'gate-results/';
+  const filePattern = 'gate-results-*.json';
 
   try {
     // Use git check-ignore to test if the pattern would already cover gate result files
     // This handles all edge cases: broader patterns, multiple patterns, etc.
-    execSync('git check-ignore -q gate-results/any.json', {
+    execSync('git check-ignore -q gate-results-12345.json', {
       cwd,
       stdio: 'ignore',
     });
@@ -257,7 +257,7 @@ async function updateGitignore(cwd: string): Promise<boolean> {
 
     // Append the pattern with proper newline handling
     const newline = content && !content.endsWith('\n') ? '\n' : '';
-    await fs.appendFile(gitignorePath, `${newline}${dirPattern}\n`, 'utf8');
+    await fs.appendFile(gitignorePath, `${newline}${filePattern}\n`, 'utf8');
     return true;
   } catch {
     // Silently fail if we can't update .gitignore
@@ -334,8 +334,7 @@ async function setupClaudeHook(
       if ('hooks' in item && Array.isArray(item.hooks)) {
         const hasRalphGate = item.hooks.some(
           (hook) =>
-            hook.type === 'command' &&
-            hook.command === RALPH_GATE_HOOK_COMMAND,
+            hook.type === 'command' && hook.command === RALPH_GATE_HOOK_COMMAND,
         );
         if (hasRalphGate) {
           hookExists = true;
