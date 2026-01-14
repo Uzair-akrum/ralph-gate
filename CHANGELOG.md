@@ -1,5 +1,11 @@
 # ralph-gate
 
+## 0.3.1
+
+### Patch Changes
+
+- f9b4ea1: Fixed settings output
+
 ## 0.3.0
 
 ### Minor Changes
